@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/celestiaorg/celestia-app/v3/test/util/testnode"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 type IntegrationTestSuite struct {
@@ -81,9 +83,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryInflationRate() {
 // TestGetCmdQueryAnnualProvisions tests that the CLI query command for annual-provisions
 // returns the correct value. This test assumes that the initial inflation
 // rate is 0.08 and the initial total supply is 500_000_000 utia.
-//
-// TODO assert that total supply is 500_000_000 utia.
 func (s *IntegrationTestSuite) TestGetCmdQueryAnnualProvisions() {
+	// Verify that the initial total supply is 500_000_000 utia
+	bankClient := banktypes.NewQueryClient(s.cctx.Context)
+	resp, err := bankClient.TotalSupply(context.Background(), &banktypes.QueryTotalSupplyRequest{})
+	s.Require().NoError(err)
+	expectedTotalSupply := sdk.NewInt(500_000_000).Mul(sdk.NewInt(1_000_000)) // 500_000_000 utia
+	s.Require().Equal(expectedTotalSupply.String(), resp.Supply.AmountOf("utia").String())
+
 	testCases := []struct {
 		name string
 		args []string
